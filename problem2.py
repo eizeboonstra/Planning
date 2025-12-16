@@ -219,39 +219,47 @@ def calculate_slackness(itins, recaps, model, columns, master):
     recapture_map = {(r.from_itinerary, r.to_itinerary): r.recapture_rate for r in recaps}
     itin_flights = {itin.itinerary_id: [itin.flight1, itin.flight2] for itin in itins}
     
-
     for column in columns:
         p_id = column.from_itinerary
         r_id = column.to_itinerary
         fare_p = fare_map.get(p_id, 0)
         fare_r = fare_map.get(r_id, 0)
-        recapture_rate = recapture_map.get((p_id, r_id), 0)
+        b_pr = recapture_map.get((p_id, r_id), 0)  # b(p→r) for objective
 
-        # Get all flight IDs from both itineraries
         flights_in_p = set(itin_flights.get(p_id, []))
         flights_in_r = set(itin_flights.get(r_id, []))
         all_flights = flights_in_p | flights_in_r
         
-        # Sum over all flights: (delta_i^p - delta_i^r * b_p^r) * pi_i
-        dual_sum = 0
+        # C1 contribution - must match build_model_constraints logic!
+        # For variable t_{p}_{r}:
+        #   Term 1: +1 if flight in p
+        #   Term 2: -b_rp if flight in r (where b_rp = recapture_map.get((r_id, p_id), 0))
+        dual_sum_c1 = 0
         for flight_id in all_flights:
             constr = model.getConstrByName(f"C1_Capacity_{flight_id}")
             if constr is not None:
                 pi_i = constr.Pi
                 delta_p = 1 if flight_id in flights_in_p else 0
                 delta_r = 1 if flight_id in flights_in_r else 0
-                dual_sum += (delta_p - delta_r * recapture_rate) * pi_i
+                b_rp = recapture_map.get((r_id, p_id), 0)  # REVERSED: b(r→p)
+                coeff = delta_p - delta_r * b_rp  # Match constraint!
+                dual_sum_c1 += coeff * pi_i
 
-        # dual for demand constraint of itinerary p (sigma_p)
+        # C2 contribution: sigma_p
         demand_constr = model.getConstrByName(f"C2_Demand_{p_id}")
         sigma_p = demand_constr.Pi if demand_constr is not None else 0
 
-        # Slackness: sum_i (delta_i^p - delta_i^r * b_p^r) * pi_i + sigma_p - (fare_p - b_p^r * fare_r)
-        slackness_value = dual_sum + sigma_p - (fare_p - recapture_rate * fare_r)
+        # Objective coefficient uses b_pr (not b_rp)
+        cost_coeff = fare_p - b_pr * fare_r
+        
+        # Reduced cost = c_j - (a_j^T * pi)
+        slackness_value = cost_coeff - dual_sum_c1 - sigma_p
         slackness[(p_id, r_id)] = slackness_value
 
-    # find minimum slackness
     min_slackness = min(slackness.values())
+    
+    negative_rc_count = sum(1 for v in slackness.values() if v < -1e-6)
+    print(f"  Columns with negative reduced cost: {negative_rc_count}")
 
     # remove columns with negative slackness and add them to master
     columns_to_remove = []
@@ -378,5 +386,13 @@ else:
 
 print(f"\nDifference between LP and column generation MIP objective values: {abs(lp_value - model.objVal)}")
 print("All columns active and integer", lp_value)
+
+# --- Comparison with expensive_model.py ---
+total_potential_revenue = sum(itin.demand * itin.price for itin in itins)
+print(f"\n--- Model Comparison ---")
+print(f"Total Potential Revenue: ${total_potential_revenue:,.2f}")
+print(f"Lost Revenue (this model): ${model.objVal:,.2f}")
+print(f"Implied Actual Revenue: ${total_potential_revenue - model.objVal:,.2f}")
+print(f"\nTo verify: expensive_model.py objective should equal: ${total_potential_revenue - model.objVal:,.2f}")
 
 

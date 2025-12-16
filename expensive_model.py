@@ -95,3 +95,12 @@ elif model_expensive.status == GRB.INFEASIBLE:
     print("IIS written to passenger_mix_infeasible.ilp for analysis.")
 else:
     print(f"\nOptimization finished with status: {model_expensive.status}")
+
+# --- Comparison with problem2.py ---
+# Calculate total potential revenue (sum of demand * price for all itineraries)
+total_potential_revenue = sum(itin.demand * itin.price for itin in itins)
+print(f"\n--- Model Comparison ---")
+print(f"Total Potential Revenue (all demand satisfied): ${total_potential_revenue:,.2f}")
+print(f"Actual Revenue (expensive model): ${model_expensive.objVal:,.2f}")
+print(f"Lost Revenue (expensive model): ${total_potential_revenue - model_expensive.objVal:,.2f}")
+print(f"\nTo verify: problem2.py objective should equal: ${total_potential_revenue - model_expensive.objVal:,.2f}")
