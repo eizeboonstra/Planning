@@ -8,70 +8,75 @@ itins = [itin for itin in get_itineraries() if itin.itinerary_id != 382]
 # Filter out recaptures involving dummy itinerary
 recaps = [r for r in get_recapture() if r.from_itinerary != 382 and r.to_itinerary != 382]
 
-
+# Build lookup maps
+recapture_map = {(r.from_itinerary, r.to_itinerary): r.recapture_rate for r in recaps}
+itin_flights = {itin.itinerary_id: [itin.flight1, itin.flight2] for itin in itins}
+fare_map = {itin.itinerary_id: itin.price for itin in itins}
+demand_map = {itin.itinerary_id: itin.demand for itin in itins}
 
 model_expensive = gp.Model("Passenger_Mix_Flow_Expensive")
 
-# number of passangers from itin p that will travel on itinerary r
+# Variables: x_{p}_{r} for all p, r in P
 for itin in itins:
     for itin2 in itins:
         var_name = f"x_{itin.itinerary_id}_{itin2.itinerary_id}"
         model_expensive.addVar(vtype=GRB.INTEGER, name=var_name, lb=0)
 
-# Update the model to make new variables available for lookup by name
 model_expensive.update()
 
-# constraints
-
+# C1: Capacity Constraints
+# sum_{p in P} sum_{r in P} delta_i^r * x_p^r <= CAP_i
 for flight in flights:
-
     flight_id = flight.flight_id
     constr_expr = gp.LinExpr()
 
-    for itin in itins:
-        for itin2 in itins:
-
-
-            # check if flight is in itinerary r
-            if flight_id == itin2.flight1 or flight_id == itin2.flight2:
-                var_name = f"x_{itin2.itinerary_id}_{itin.itinerary_id}"
+    for p_itin in itins:
+        for r_itin in itins:
+            # delta_i^r = 1 if flight is in itinerary r
+            if flight_id in itin_flights.get(r_itin.itinerary_id, []):
+                var_name = f"x_{p_itin.itinerary_id}_{r_itin.itinerary_id}"
                 x_var = model_expensive.getVarByName(var_name)
-                constr_expr +=  x_var
+                constr_expr += x_var
     
-    rhs = flight.capacity
-    model_expensive.addConstr(constr_expr <= rhs, name=f"C1_Capacity_{flight_id}_upper")
+    model_expensive.addConstr(constr_expr <= flight.capacity, name=f"C1_Capacity_{flight_id}")
 
-
-# C2 number of passengers is lower than demand
-for itin in itins:
+# C2: Demand Constraints
+# sum_{r in P_p} (x_p^r / b_p^r) <= D_p
+for p_itin in itins:
+    p_id = p_itin.itinerary_id
     constr_expr = gp.LinExpr()
-    for itin2 in itins:
-        var_name = f"x_{itin.itinerary_id}_{itin2.itinerary_id}"
+    
+    for r_itin in itins:
+        r_id = r_itin.itinerary_id
+        var_name = f"x_{p_id}_{r_id}"
         x_var = model_expensive.getVarByName(var_name)
-        # Get recapture rate b_p^r for this pair
-        b_pr = 1.0  # default if no recapture exists
-        for recap in recaps:
-            if recap.from_itinerary == itin.itinerary_id and recap.to_itinerary == itin2.itinerary_id:
-                b_pr = recap.recapture_rate
-                break
+        
+        # Get recapture rate b_p^r (default to 1 if p == r, else check recapture map)
+        if p_id == r_id:
+            b_pr = 1.0  # Passengers staying on their original itinerary
+        else:
+            b_pr = recapture_map.get((p_id, r_id), 0)
+            if b_pr == 0:
+                # No recapture path exists, so this variable should be 0
+                # We can either skip it or force it to 0
+                model_expensive.addConstr(x_var == 0, name=f"NoRecapture_{p_id}_{r_id}")
+                continue
+        
         constr_expr += x_var / b_pr
-    rhs = itin.demand
-    model_expensive.addConstr(constr_expr <= rhs, name=f"C2_Demand_{itin.itinerary_id}_upper")
+    
+    model_expensive.addConstr(constr_expr <= p_itin.demand, name=f"C2_Demand_{p_id}")
 
-
-# Objective: maximize revenue
+# Objective: maximize revenue = sum_{p} sum_{r} fare_r * x_p^r
 obj_expr = gp.LinExpr()
-for itin in itins:
-    for itin2 in itins:
-        var_name = f"x_{itin.itinerary_id}_{itin2.itinerary_id}"
+for p_itin in itins:
+    for r_itin in itins:
+        var_name = f"x_{p_itin.itinerary_id}_{r_itin.itinerary_id}"
         x_var = model_expensive.getVarByName(var_name)
-        price = itin2.price
-        obj_expr += price * x_var
+        obj_expr += r_itin.price * x_var
+
 model_expensive.setObjective(obj_expr, GRB.MAXIMIZE)
 
-# Write the model to an LP file
 model_expensive.write("passenger_mix_flow_expensive.lp")
-
 model_expensive.optimize()
 
 # --- Results Summary ---
@@ -81,23 +86,21 @@ if model_expensive.status == GRB.OPTIMAL:
     print("--------------------------------")
     print(f"\nOptimal Total Revenue: ${model_expensive.objVal:,.2f}")
     
-    print("\n--- Passenger Assignments (x_p_r) ---")
+    print("\n--- Passenger Assignments (x_p_r > 0) ---")
     for v in model_expensive.getVars():
-        if v.x > 0.5:  # Print non-zero assignments
+        if v.x > 0.5:
             print(f"  {v.varName}: {v.x}")
     print("\nLP model file created: passenger_mix_flow_expensive.lp")
 
 elif model_expensive.status == GRB.INFEASIBLE:
     print("\nModel is infeasible.")
-    print("Computing Irreducible Inconsistent Subsystem (IIS)...")
     model_expensive.computeIIS()
     model_expensive.write("passenger_mix_infeasible.ilp")
-    print("IIS written to passenger_mix_infeasible.ilp for analysis.")
+    print("IIS written to passenger_mix_infeasible.ilp")
 else:
     print(f"\nOptimization finished with status: {model_expensive.status}")
 
 # --- Comparison with problem2.py ---
-# Calculate total potential revenue (sum of demand * price for all itineraries)
 total_potential_revenue = sum(itin.demand * itin.price for itin in itins)
 print(f"\n--- Model Comparison ---")
 print(f"Total Potential Revenue (all demand satisfied): ${total_potential_revenue:,.2f}")
