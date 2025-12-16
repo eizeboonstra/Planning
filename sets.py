@@ -1,8 +1,14 @@
 
 import pandas as pd
+from pathlib import Path
 
+# Get the directory where this script is located
+SCRIPT_DIR = Path(__file__).parent
 
-data_file = "C:\\TUDELFT\\Sustainable Air Transport\\Q2\\airline_planning\\Problem 2 - Data\\Problem 2 - Data\\Group_11.xlsx"
+# Data file path relative to the script location
+# Place Group_11.xlsx in a "data" folder inside the Planning directory
+data_file = SCRIPT_DIR /"Group_11.xlsx"
+
 xls = pd.ExcelFile(data_file)  # ExcelFile is not subscriptable; pass it to pd.read_excel
 class Flights:
     def __init__(self, flight_id, origin, destination,departure, ready, capacity):

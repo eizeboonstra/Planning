@@ -273,7 +273,8 @@ def calculate_slackness(itins, recaps, model, columns, master):
 
     return min_slackness, master, columns   
 
-iteration = 0     
+iteration = 0
+objective_history = []  # Track objective values per iteration
 
 while True:
     # Remove old constraints before rebuilding
@@ -284,6 +285,10 @@ while True:
     build_model_constraints(model, flights, itins, master)
     set_objective_function(model, itins, master)
     model.optimize()
+    
+    # Store objective value for this iteration
+    if model.status == GRB.OPTIMAL:
+        objective_history.append(model.objVal)
     
     if not columns:  # No more columns to check
         break
@@ -322,6 +327,11 @@ print("="*60)
 
 # Print number of iterations
 print(f"Total number of iterations: {iteration}")
+
+# Print objective value history
+print("\n--- Objective Value per Iteration ---")
+for i, obj_val in enumerate(objective_history):
+    print(f"  Iteration {i}: {obj_val:.2f}")
 
 # Calculate and print passengers recaptured and non-zero variables
 if model.status == GRB.OPTIMAL:

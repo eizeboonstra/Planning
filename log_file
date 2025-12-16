@@ -1,0 +1,187 @@
+
+Gurobi 13.0.0 (win64) logging started Tue Dec 16 18:52:22 2025
+
+Set parameter LogFile to value "log_file"
+Warning: variable name "freq(EGLL,EHAM,Regional turboprop)" has a space
+Warning: constraint name "balanceEGLL_Regional turboprop" has a space
+Warning: to let Gurobi read it back, use rlp format
+Gurobi Optimizer version 13.0.0 build v13.0.0rc1 (win64 - Windows 11.0 (26100.2))
+
+CPU model: 13th Gen Intel(R) Core(TM) i7-13700H, instruction set [SSE2|AVX|AVX2]
+Thread count: 14 physical cores, 20 logical processors, using up to 20 threads
+
+Optimize a model with 2778 rows, 574 columns and 2416 nonzeros (Max)
+Model fingerprint: 0x299dd5ff
+Model has 574 linear objective coefficients
+Variable types: 418 continuous, 156 integer (0 binary)
+Coefficient statistics:
+  Matrix range     [1e+00, 2e+05]
+  Objective range  [4e+01, 2e+05]
+  Bounds range     [0e+00, 0e+00]
+  RHS range        [1e+00, 1e+14]
+Warning: Model contains large rhs
+         Consider reformulating model or setting NumericFocus parameter
+         to avoid numerical issues.
+Found heuristic solution: objective -0.0000000
+Presolve removed 2737 rows and 319 columns
+Presolve time: 0.00s
+Presolved: 41 rows, 255 columns, 547 nonzeros
+Variable types: 189 continuous, 66 integer (3 binary)
+
+Root relaxation: objective 6.203648e+03, 31 iterations, 0.00 seconds (0.00 work units)
+
+    Nodes    |    Current Node    |     Objective Bounds      |     Work
+ Expl Unexpl |  Obj  Depth IntInf | Incumbent    BestBd   Gap | It/Node Time
+
+     0     0 6203.64751    0    3   -0.00000 6203.64751      -     -    0s
+H    0     0                    5033.9533023 6203.64751  23.2%     -    0s
+H    0     0                    5741.8148434 6203.64751  8.04%     -    0s
+     0     0     cutoff    0      5741.81484 5741.81484  0.00%     -    0s
+
+Cutting planes:
+  MIR: 3
+  StrongCG: 1
+
+Explored 1 nodes (33 simplex iterations) in 0.02 seconds (0.00 work units)
+Thread count was 20 (of 20 available processors)
+
+Solution count 3: 5741.81 5033.95 -0 
+
+Optimal solution found (tolerance 1.00e-04)
+Best objective 5.741814843448e+03, best bound 5.741814843448e+03, gap 0.0000%
+
+Gurobi 13.0.0 (win64) logging started Tue Dec 16 18:53:21 2025
+
+Set parameter LogFile to value "log_file"
+Warning: variable name "freq(EGLL,EHAM,Regional turboprop)" has a space
+Warning: constraint name "balanceEGLL_Regional turboprop" has a space
+Warning: to let Gurobi read it back, use rlp format
+Gurobi Optimizer version 13.0.0 build v13.0.0rc1 (win64 - Windows 11.0 (26100.2))
+
+CPU model: 13th Gen Intel(R) Core(TM) i7-13700H, instruction set [SSE2|AVX|AVX2]
+Thread count: 14 physical cores, 20 logical processors, using up to 20 threads
+
+Optimize a model with 2778 rows, 574 columns and 2416 nonzeros (Max)
+Model fingerprint: 0x299dd5ff
+Model has 574 linear objective coefficients
+Variable types: 418 continuous, 156 integer (0 binary)
+Coefficient statistics:
+  Matrix range     [1e+00, 2e+05]
+  Objective range  [4e+01, 2e+05]
+  Bounds range     [0e+00, 0e+00]
+  RHS range        [1e+00, 1e+14]
+Warning: Model contains large rhs
+         Consider reformulating model or setting NumericFocus parameter
+         to avoid numerical issues.
+Found heuristic solution: objective -0.0000000
+Presolve removed 2737 rows and 319 columns
+Presolve time: 0.00s
+Presolved: 41 rows, 255 columns, 547 nonzeros
+Variable types: 189 continuous, 66 integer (3 binary)
+
+Root relaxation: objective 6.203648e+03, 31 iterations, 0.00 seconds (0.00 work units)
+
+    Nodes    |    Current Node    |     Objective Bounds      |     Work
+ Expl Unexpl |  Obj  Depth IntInf | Incumbent    BestBd   Gap | It/Node Time
+
+     0     0 6203.64751    0    3   -0.00000 6203.64751      -     -    0s
+H    0     0                    5033.9533023 6203.64751  23.2%     -    0s
+H    0     0                    5741.8148434 6203.64751  8.04%     -    0s
+     0     0     cutoff    0      5741.81484 5741.81484  0.00%     -    0s
+
+Cutting planes:
+  MIR: 3
+  StrongCG: 1
+
+Explored 1 nodes (33 simplex iterations) in 0.02 seconds (0.00 work units)
+Thread count was 20 (of 20 available processors)
+
+Solution count 3: 5741.81 5033.95 -0 
+
+Optimal solution found (tolerance 1.00e-04)
+Best objective 5.741814843448e+03, best bound 5.741814843448e+03, gap 0.0000%
+
+Gurobi 13.0.0 (win64) logging started Tue Dec 16 18:58:02 2025
+
+Set parameter LogFile to value "log_file"
+Warning: variable name "freq(EGLL,EHAM,Regional turboprop)" has a space
+Warning: constraint name "balanceEGLL_Regional turboprop" has a space
+Warning: to let Gurobi read it back, use rlp format
+Gurobi Optimizer version 13.0.0 build v13.0.0rc1 (win64 - Windows 11.0 (26100.2))
+
+CPU model: 13th Gen Intel(R) Core(TM) i7-13700H, instruction set [SSE2|AVX|AVX2]
+Thread count: 14 physical cores, 20 logical processors, using up to 20 threads
+
+Optimize a model with 2778 rows, 574 columns and 2416 nonzeros (Max)
+Model fingerprint: 0x7c498437
+Model has 574 linear objective coefficients
+Variable types: 418 continuous, 156 integer (0 binary)
+Coefficient statistics:
+  Matrix range     [1e+00, 2e+05]
+  Objective range  [4e+01, 2e+05]
+  Bounds range     [0e+00, 0e+00]
+  RHS range        [1e+00, 1e+14]
+Warning: Model contains large rhs
+         Consider reformulating model or setting NumericFocus parameter
+         to avoid numerical issues.
+Found heuristic solution: objective -0.0000000
+Presolve removed 2737 rows and 319 columns
+Presolve time: 0.00s
+Presolved: 41 rows, 255 columns, 547 nonzeros
+Variable types: 189 continuous, 66 integer (3 binary)
+
+Root relaxation: objective 4.965713e+04, 64 iterations, 0.00 seconds (0.00 work units)
+
+    Nodes    |    Current Node    |     Objective Bounds      |     Work
+ Expl Unexpl |  Obj  Depth IntInf | Incumbent    BestBd   Gap | It/Node Time
+
+     0     0 49657.1331    0   23   -0.00000 49657.1331      -     -    0s
+H    0     0                    24686.536600 49657.1331   101%     -    0s
+H    0     0                    34800.495291 49657.1331  42.7%     -    0s
+H    0     0                    40022.633239 49657.1331  24.1%     -    0s
+     0     0 47014.5435    0   22 40022.6332 47014.5435  17.5%     -    0s
+     0     0 46904.5612    0   21 40022.6332 46904.5612  17.2%     -    0s
+     0     0 46840.4388    0   20 40022.6332 46840.4388  17.0%     -    0s
+     0     0 46048.3359    0   18 40022.6332 46048.3359  15.1%     -    0s
+     0     0 45938.3416    0   17 40022.6332 45938.3416  14.8%     -    0s
+     0     0 45935.0060    0   19 40022.6332 45935.0060  14.8%     -    0s
+     0     0 45845.9359    0   16 40022.6332 45845.9359  14.6%     -    0s
+     0     0 45821.5443    0   18 40022.6332 45821.5443  14.5%     -    0s
+H    0     0                    40636.535125 45813.2435  12.7%     -    0s
+     0     0 45782.8321    0   18 40636.5351 45782.8321  12.7%     -    0s
+     0     0 45770.7973    0   25 40636.5351 45770.7973  12.6%     -    0s
+     0     0 45770.1414    0   22 40636.5351 45770.1414  12.6%     -    0s
+     0     0 45727.3091    0   24 40636.5351 45727.3091  12.5%     -    0s
+     0     0 45715.1875    0   22 40636.5351 45715.1875  12.5%     -    0s
+     0     0 45674.2501    0   23 40636.5351 45674.2501  12.4%     -    0s
+     0     0 45669.2170    0   25 40636.5351 45669.2170  12.4%     -    0s
+     0     0 45668.6953    0   26 40636.5351 45668.6953  12.4%     -    0s
+     0     0 45640.1887    0   24 40636.5351 45640.1887  12.3%     -    0s
+     0     0 45636.3620    0   28 40636.5351 45636.3620  12.3%     -    0s
+     0     0 45636.1553    0   23 40636.5351 45636.1553  12.3%     -    0s
+     0     0 45634.6917    0   25 40636.5351 45634.6917  12.3%     -    0s
+     0     0 45634.4460    0   25 40636.5351 45634.4460  12.3%     -    0s
+     0     2 45634.4460    0   25 40636.5351 45634.4460  12.3%     -    0s
+H   80    92                    40756.005539 45288.8452  11.1%   9.8    0s
+H   85    92                    40988.671351 45182.8142  10.2%   9.6    0s
+H  224   223                    42475.931842 44861.8034  5.62%   6.5    0s
+*  367   262              29    42529.466682 44639.3104  4.96%   6.0    0s
+H  431   294                    43079.263925 44639.3104  3.62%   6.1    0s
+H  778   318                    43797.976086 44339.8666  1.24%   5.9    0s
+*  780   318              28    43811.134423 44339.8666  1.21%   5.9    0s
+*  875   160              24    43938.960085 44339.8666  0.91%   5.7    0s
+* 1024    11              24    43972.420079 44250.0906  0.63%   5.1    0s
+
+Cutting planes:
+  Gomory: 9
+  Implied bound: 3
+  MIR: 63
+  RLT: 1
+
+Explored 1171 nodes (5470 simplex iterations) in 0.12 seconds (0.05 work units)
+Thread count was 20 (of 20 available processors)
+
+Solution count 10: 43972.4 43939 43811.1 ... 40022.6
+
+Optimal solution found (tolerance 1.00e-04)
+Best objective 4.397242007868e+04, best bound 4.397242007868e+04, gap 0.0000%

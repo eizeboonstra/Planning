@@ -150,7 +150,7 @@ def cost_definition(aircraft,arc):
     f = 1.42
     C_X = aircraft.C_X
     C_T = aircraft.c_T*arc.Dist/aircraft.V
-    C_F = aircraft.c_F*(f**1.5)*arc.Dist
+    C_F =((aircraft.c_F*f)/1.5)*arc.Dist
     op_costs = C_X+C_T+C_F # per frequency # we apply a 30% reduction on the flight to the hub
     op_costs = 0.7*op_costs
     return op_costs
