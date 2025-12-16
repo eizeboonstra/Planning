@@ -227,25 +227,27 @@ def calculate_slackness(itins, recaps, model, columns, master):
         fare_r = fare_map.get(r_id, 0)
         recapture_rate = recapture_map.get((p_id, r_id), 0)
 
-        # dual for capacity constraint of each flight in itinerary p
-        dual_sum = 0
-        for flight_id in itin_flights.get(p_id, []):
-            constr = model.getConstrByName(f"C1_Capacity_{flight_id}")
-            if constr is not None:
-                dual_sum += constr.Pi
+        # Get all flight IDs from both itineraries
+        flights_in_p = set(itin_flights.get(p_id, []))
+        flights_in_r = set(itin_flights.get(r_id, []))
+        all_flights = flights_in_p | flights_in_r
         
-        # dual for capacity constraint of each flight in itinerary r
-        sum_j = 0
-        for flight_id in itin_flights.get(r_id, []):
+        # Sum over all flights: (delta_i^p - delta_i^r * b_p^r) * pi_i
+        dual_sum = 0
+        for flight_id in all_flights:
             constr = model.getConstrByName(f"C1_Capacity_{flight_id}")
             if constr is not None:
-                sum_j += constr.Pi
+                pi_i = constr.Pi
+                delta_p = 1 if flight_id in flights_in_p else 0
+                delta_r = 1 if flight_id in flights_in_r else 0
+                dual_sum += (delta_p - delta_r * recapture_rate) * pi_i
 
-        # dual for demand constraint of itinerary p
+        # dual for demand constraint of itinerary p (sigma_p)
         demand_constr = model.getConstrByName(f"C2_Demand_{p_id}")
-        dual_demand = demand_constr.Pi if demand_constr is not None else 0
+        sigma_p = demand_constr.Pi if demand_constr is not None else 0
 
-        slackness_value = (fare_p - dual_sum) - recapture_rate * (fare_r - sum_j) - dual_demand
+        # Slackness: sum_i (delta_i^p - delta_i^r * b_p^r) * pi_i + sigma_p - (fare_p - b_p^r * fare_r)
+        slackness_value = dual_sum + sigma_p - (fare_p - recapture_rate * fare_r)
         slackness[(p_id, r_id)] = slackness_value
 
     # find minimum slackness

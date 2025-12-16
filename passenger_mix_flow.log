@@ -695,3 +695,85 @@ Solution count 4: 1.44253e+06 1.4679e+06 1.47304e+06 1.5508e+06
 
 Optimal solution found (tolerance 1.00e-04)
 Best objective 1.442533930000e+06, best bound 1.442474989517e+06, gap 0.0041%
+
+Gurobi 13.0.0 (win64) logging started Tue Dec 16 19:03:58 2025
+
+Set parameter LogFile to value "passenger_mix_flow.log"
+Gurobi Optimizer version 13.0.0 build v13.0.0rc1 (win64 - Windows 11.0 (26100.2))
+
+CPU model: 13th Gen Intel(R) Core(TM) i7-13700H, instruction set [SSE2|AVX|AVX2]
+Thread count: 14 physical cores, 20 logical processors, using up to 20 threads
+
+Optimize a model with 530 rows, 753 columns and 1954 nonzeros (Min)
+Model fingerprint: 0x08e6c79c
+Model has 752 linear objective coefficients
+Variable types: 0 continuous, 753 integer (0 binary)
+Coefficient statistics:
+  Matrix range     [5e-01, 1e+00]
+  Objective range  [2e+00, 3e+02]
+  Bounds range     [0e+00, 0e+00]
+  RHS range        [1e+00, 8e+02]
+Found heuristic solution: objective 1550798.9200
+Presolve removed 441 rows and 444 columns
+Presolve time: 0.01s
+Presolved: 89 rows, 309 columns, 580 nonzeros
+Found heuristic solution: objective 1473040.6000
+Variable types: 0 continuous, 309 integer (1 binary)
+Found heuristic solution: objective 1467901.6000
+
+Root relaxation: objective 1.442475e+06, 153 iterations, 0.00 seconds (0.00 work units)
+
+    Nodes    |    Current Node    |     Objective Bounds      |     Work
+ Expl Unexpl |  Obj  Depth IntInf | Incumbent    BestBd   Gap | It/Node Time
+
+     0     0 1442474.99    0    8 1467901.60 1442474.99  1.73%     -    0s
+H    0     0                    1442533.9300 1442474.99  0.00%     -    0s
+
+Explored 1 nodes (153 simplex iterations) in 0.02 seconds (0.00 work units)
+Thread count was 20 (of 20 available processors)
+
+Solution count 4: 1.44253e+06 1.4679e+06 1.47304e+06 1.5508e+06 
+
+Optimal solution found (tolerance 1.00e-04)
+Best objective 1.442533930000e+06, best bound 1.442474989517e+06, gap 0.0041%
+
+Gurobi 13.0.0 (win64) logging started Tue Dec 16 19:04:23 2025
+
+Set parameter LogFile to value "passenger_mix_flow.log"
+Gurobi Optimizer version 13.0.0 build v13.0.0rc1 (win64 - Windows 11.0 (26100.2))
+
+CPU model: 13th Gen Intel(R) Core(TM) i7-13700H, instruction set [SSE2|AVX|AVX2]
+Thread count: 14 physical cores, 20 logical processors, using up to 20 threads
+
+Optimize a model with 530 rows, 753 columns and 1954 nonzeros (Min)
+Model fingerprint: 0x08e6c79c
+Model has 752 linear objective coefficients
+Variable types: 0 continuous, 753 integer (0 binary)
+Coefficient statistics:
+  Matrix range     [5e-01, 1e+00]
+  Objective range  [2e+00, 3e+02]
+  Bounds range     [0e+00, 0e+00]
+  RHS range        [1e+00, 8e+02]
+Found heuristic solution: objective 1550798.9200
+Presolve removed 441 rows and 444 columns
+Presolve time: 0.00s
+Presolved: 89 rows, 309 columns, 580 nonzeros
+Found heuristic solution: objective 1473040.6000
+Variable types: 0 continuous, 309 integer (1 binary)
+Found heuristic solution: objective 1467901.6000
+
+Root relaxation: objective 1.442475e+06, 153 iterations, 0.00 seconds (0.00 work units)
+
+    Nodes    |    Current Node    |     Objective Bounds      |     Work
+ Expl Unexpl |  Obj  Depth IntInf | Incumbent    BestBd   Gap | It/Node Time
+
+     0     0 1442474.99    0    8 1467901.60 1442474.99  1.73%     -    0s
+H    0     0                    1442533.9300 1442474.99  0.00%     -    0s
+
+Explored 1 nodes (153 simplex iterations) in 0.02 seconds (0.00 work units)
+Thread count was 20 (of 20 available processors)
+
+Solution count 4: 1.44253e+06 1.4679e+06 1.47304e+06 1.5508e+06 
+
+Optimal solution found (tolerance 1.00e-04)
+Best objective 1.442533930000e+06, best bound 1.442474989517e+06, gap 0.0041%
