@@ -9,11 +9,23 @@ from sets import get_flights, get_itineraries, get_recapture, Recapture
 # Passenger Mix Flow problem
 model = gp.Model("Passenger_Mix_Flow")
 
+def _norm_id(x):
+    try:
+        if isinstance(x, float) and x.is_integer():
+            return str(int(x))
+        if isinstance(x, (int,)):
+            return str(x)
+        # Try to parse numeric strings like '302.0'
+        xi = float(x)
+        return str(int(xi)) if xi.is_integer() else str(x)
+    except Exception:
+        return str(x)
+
 #=============================================================================================================================
 
 flights = get_flights()
-itins = get_itineraries()
-recaps = get_recapture()
+itins = get_itineraries()  # uses global toggle in sets.py
+recaps = get_recapture()   # uses global toggle in sets.py
 #=============================================================================================================================
 
 # create variables
@@ -86,7 +98,7 @@ def build_model_constraints(model, flights, itins, recaps):
 
 
         # Always add the constraint (if constr_expr is zero this becomes 0 >= rhs)
-        model.addConstr(constr_expr >= rhs, name=f"C1_Capacity_{flight_id}")
+        model.addConstr(constr_expr >= rhs, name=f"C1_Capacity_{_norm_id(flight_id)}")
 
     # --- C2: Demand Constraints ---
     for p_itin in itins:
@@ -98,7 +110,7 @@ def build_model_constraints(model, flights, itins, recaps):
                 if var:
                     constr_expr += var
         rhs = demand_map.get(p_id, 0)
-        model.addConstr(constr_expr <= rhs, name=f"C2_Demand_{p_id}")
+        model.addConstr(constr_expr <= rhs, name=f"C2_Demand_{_norm_id(p_id)}")
 
     # C3 (Non-negativity) handled by lb=0
     model.update()
@@ -148,6 +160,7 @@ set_objective_function(model, itins, recaps)
 model.write("PassengerMixFlow.lp")
 
 # Optimize model
+model.setParam("MIPGap", 0)  # tighten optimality only for MIP
 model.optimize()
 
 # If solve not optimal, compute IIS and write it out for inspection
@@ -236,7 +249,7 @@ def calculate_slackness(itins, recaps, model, columns, master):
         #   Term 2: -b_rp if flight in r (where b_rp = recapture_map.get((r_id, p_id), 0))
         dual_sum_c1 = 0
         for flight_id in all_flights:
-            constr = model.getConstrByName(f"C1_Capacity_{flight_id}")
+            constr = model.getConstrByName(f"C1_Capacity_{_norm_id(flight_id)}")
             if constr is not None:
                 pi_i = constr.Pi
                 delta_p = 1 if flight_id in flights_in_p else 0
@@ -246,7 +259,7 @@ def calculate_slackness(itins, recaps, model, columns, master):
                 dual_sum_c1 += coeff * pi_i
 
         # C2 contribution: sigma_p
-        demand_constr = model.getConstrByName(f"C2_Demand_{p_id}")
+        demand_constr = model.getConstrByName(f"C2_Demand_{_norm_id(p_id)}")
         sigma_p = demand_constr.Pi if demand_constr is not None else 0
 
         # Objective coefficient uses b_pr (not b_rp)
@@ -281,7 +294,70 @@ def calculate_slackness(itins, recaps, model, columns, master):
     
     model.update()
 
-    return min_slackness, master, columns   
+    return min_slackness, master, columns
+
+def calculate_slackness_reformulation(itins, recaps, model, columns, master):
+    slackness = {}
+    fare_map = {itin.itinerary_id: itin.price for itin in itins}
+    recapture_map = {(r.from_itinerary, r.to_itinerary): r.recapture_rate for r in recaps}
+    itin_flights = {itin.itinerary_id: [itin.flight1, itin.flight2] for itin in itins}
+
+    for column in columns:
+        p_id = column.from_itinerary
+        r_id = column.to_itinerary
+
+        fare_p = fare_map.get(p_id, 0)
+        fare_r = fare_map.get(r_id, 0)
+        b_pr = recapture_map.get((p_id, r_id), 0)
+
+        flights_in_p = itin_flights.get(p_id, []) or []
+        flights_in_r = itin_flights.get(r_id, []) or []
+
+        sum_pi_p = 0
+        for flight_id in flights_in_p:
+            constr = model.getConstrByName(f"C1_Capacity_{_norm_id(flight_id)}")
+            if constr is not None:
+                sum_pi_p += constr.Pi
+
+        sum_pi_r = 0
+        for flight_id in flights_in_r:
+            constr = model.getConstrByName(f"C1_Capacity_{_norm_id(flight_id)}")
+            if constr is not None:
+                sum_pi_r += constr.Pi
+
+        demand_constr = model.getConstrByName(f"C2_Demand_{_norm_id(p_id)}")
+        sigma_p = demand_constr.Pi if demand_constr is not None else 0
+
+        modified_fare_p = fare_p - sum_pi_p
+        modified_fare_r = fare_r - sum_pi_r
+
+        reduced_cost = modified_fare_p - b_pr * modified_fare_r - sigma_p
+        slackness[(p_id, r_id)] = reduced_cost
+
+    min_slackness = min(slackness.values()) if slackness else 0
+
+    columns_to_remove = []
+    added_var_names = []
+    for key, value in slackness.items():
+        if value < 0:
+            p_id, r_id = key
+            col_to_move = next((c for c in columns if c.from_itinerary == p_id and c.to_itinerary == r_id), None)
+            if col_to_move:
+                columns_to_remove.append(col_to_move)
+                master.append(col_to_move)
+                var_name = f"t_{p_id}_{r_id}"
+                if model.getVarByName(var_name) is None:
+                    model.addVar(vtype=GRB.CONTINUOUS, name=var_name, lb=0)
+                    added_var_names.append(var_name)
+
+    for col in columns_to_remove:
+        columns.remove(col)
+
+    model.update()
+
+    return min_slackness, master, columns, added_var_names
+
+
 
 iteration = 0
 objective_history = []  # Track objective values per iteration
@@ -295,6 +371,7 @@ while True:
     build_model_constraints(model, flights, itins, master)
     set_objective_function(model, itins, master)
     model.optimize()
+
     
     # Store objective value for this iteration
     if model.status == GRB.OPTIMAL:
@@ -303,9 +380,14 @@ while True:
     if not columns:  # No more columns to check
         break
         
-    min_slackness, master, columns = calculate_slackness(itins, recaps, model, columns, master)
+    min_slackness, master, columns= calculate_slackness(itins, recaps, model, columns, master)
     iteration += 1
     print(f"Iteration {iteration}: Minimum Slackness = {min_slackness}")
+    
+    # if added_vars:
+    #     print("  Added DVs:", ", ".join(added_vars))
+    # else:
+    #     print("  Added DVs: none")
     
     if min_slackness >= 0:
         break
@@ -394,5 +476,7 @@ print(f"Total Potential Revenue: ${total_potential_revenue:,.2f}")
 print(f"Lost Revenue (this model): ${model.objVal:,.2f}")
 print(f"Implied Actual Revenue: ${total_potential_revenue - model.objVal:,.2f}")
 print(f"\nTo verify: expensive_model.py objective should equal: ${total_potential_revenue - model.objVal:,.2f}")
+
+
 
 

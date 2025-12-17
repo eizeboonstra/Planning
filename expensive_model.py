@@ -1,8 +1,12 @@
 from sets import get_flights, get_itineraries, get_recapture
 import gurobipy as gp
 from gurobipy import GRB
+import csv
+
+"""Schema is now controlled centrally in sets.py via USE_LECTURE_SCHEMA."""
 
 flights = get_flights()
+
 # Filter out dummy itinerary (id 382)
 itins = [itin for itin in get_itineraries() if itin.itinerary_id != 382]
 # Filter out recaptures involving dummy itinerary
@@ -16,11 +20,22 @@ demand_map = {itin.itinerary_id: itin.demand for itin in itins}
 
 model_expensive = gp.Model("Passenger_Mix_Flow_Expensive")
 
-# Variables: x_{p}_{r} for all p, r in P
-for itin in itins:
-    for itin2 in itins:
-        var_name = f"x_{itin.itinerary_id}_{itin2.itinerary_id}"
-        model_expensive.addVar(vtype=GRB.INTEGER, name=var_name, lb=0)
+# Write Gurobi solver log to a file in the workspace
+model_expensive.setParam('LogFile', 'log_file')
+
+# Build allowed recapture pairs once: include only p==r and valid recaptures
+allowed_pairs = set()
+for p_itin in itins:
+    for r_itin in itins:
+        p_id, r_id = p_itin.itinerary_id, r_itin.itinerary_id
+        if p_id == r_id or (p_id, r_id) in recapture_map:
+            allowed_pairs.add((p_id, r_id))
+
+# Variables: create only for allowed pairs to avoid extra rows/constraints
+x_vars = {}
+for (p_id, r_id) in allowed_pairs:
+    var_name = f"x_{p_id}_{r_id}"
+    x_vars[(p_id, r_id)] = model_expensive.addVar(vtype=GRB.INTEGER, name=var_name, lb=0)
 
 model_expensive.update()
 
@@ -31,12 +46,12 @@ for flight in flights:
     constr_expr = gp.LinExpr()
 
     for p_itin in itins:
+        p_id = p_itin.itinerary_id
         for r_itin in itins:
+            r_id = r_itin.itinerary_id
             # delta_i^r = 1 if flight is in itinerary r
-            if flight_id in itin_flights.get(r_itin.itinerary_id, []):
-                var_name = f"x_{p_itin.itinerary_id}_{r_itin.itinerary_id}"
-                x_var = model_expensive.getVarByName(var_name)
-                constr_expr += x_var
+            if (p_id, r_id) in x_vars and flight_id in itin_flights.get(r_id, []):
+                constr_expr += x_vars[(p_id, r_id)]
     
     model_expensive.addConstr(constr_expr <= flight.capacity, name=f"C1_Capacity_{flight_id}")
 
@@ -48,36 +63,30 @@ for p_itin in itins:
     
     for r_itin in itins:
         r_id = r_itin.itinerary_id
-        var_name = f"x_{p_id}_{r_id}"
-        x_var = model_expensive.getVarByName(var_name)
-        
-        # Get recapture rate b_p^r (default to 1 if p == r, else check recapture map)
+        if (p_id, r_id) not in x_vars:
+            continue
+        x_var = x_vars[(p_id, r_id)]
+        # Demand constraint uses b_p^r; p==r has b=1, else use recapture rate
         if p_id == r_id:
-            b_pr = 1.0  # Passengers staying on their original itinerary
+            b_pr = 1.0
         else:
-            b_pr = recapture_map.get((p_id, r_id), 0)
-            if b_pr == 0:
-                # No recapture path exists, so this variable should be 0
-                # We can either skip it or force it to 0
-                model_expensive.addConstr(x_var == 0, name=f"NoRecapture_{p_id}_{r_id}")
-                continue
-        
+            b_pr = recapture_map[(p_id, r_id)]
         constr_expr += x_var / b_pr
     
     model_expensive.addConstr(constr_expr <= p_itin.demand, name=f"C2_Demand_{p_id}")
 
 # Objective: maximize revenue = sum_{p} sum_{r} fare_r * x_p^r
 obj_expr = gp.LinExpr()
-for p_itin in itins:
-    for r_itin in itins:
-        var_name = f"x_{p_itin.itinerary_id}_{r_itin.itinerary_id}"
-        x_var = model_expensive.getVarByName(var_name)
-        obj_expr += r_itin.price * x_var
+for (p_id, r_id) in x_vars:
+    # revenue depends on the received itinerary r
+    obj_expr += fare_map[r_id] * x_vars[(p_id, r_id)]
 
 model_expensive.setObjective(obj_expr, GRB.MAXIMIZE)
 
 model_expensive.write("passenger_mix_flow_expensive.lp")
 model_expensive.optimize()
+
+print("Solver log written to: log_file")
 
 # --- Results Summary ---
 if model_expensive.status == GRB.OPTIMAL:
@@ -99,6 +108,8 @@ elif model_expensive.status == GRB.INFEASIBLE:
     print("IIS written to passenger_mix_infeasible.ilp")
 else:
     print(f"\nOptimization finished with status: {model_expensive.status}")
+
+
 
 # --- Comparison with problem2.py ---
 total_potential_revenue = sum(itin.demand * itin.price for itin in itins)
