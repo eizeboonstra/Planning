@@ -71,6 +71,7 @@ def build_model_constraints(model, flights, itins, recaps):
         for recap in recaps:
             p_id = recap.from_itinerary
             r_id = recap.to_itinerary
+            b_pr = recapture_map.get((p_id, r_id), 0)  # recapture rate from p to r
 
             # Check if flight_id is in itinerary p
             if flight_id in itin_flights.get(p_id, []):
@@ -83,14 +84,14 @@ def build_model_constraints(model, flights, itins, recaps):
         for recap in recaps:
             p_id = recap.from_itinerary
             r_id = recap.to_itinerary
-            b_rp = recapture_map.get((r_id, p_id), 0) # recapture rate from r to p
+            b_pr = recapture_map.get((p_id, r_id), 0) # recapture rate from r to p
 
             # Check if flight_id is in itinerary r
             if flight_id in itin_flights.get(r_id, []):
-                var_name = f"t_{r_id}_{p_id}"
+                var_name = f"t_{p_id}_{r_id}"
                 t_var = model.getVarByName(var_name)
                 if t_var:
-                    constr_expr -= b_rp * t_var
+                    constr_expr -= b_pr * t_var
 
         # RHS: use original difference Q_i - CAP_i (do NOT clamp to 0)
         rhs = flight_demand_Q.get(flight_id, 0) - flight.capacity
@@ -111,6 +112,8 @@ def build_model_constraints(model, flights, itins, recaps):
                     constr_expr += var
         rhs = demand_map.get(p_id, 0)
         model.addConstr(constr_expr <= rhs, name=f"C2_Demand_{_norm_id(p_id)}")
+
+    # different demand formulation
 
     # C3 (Non-negativity) handled by lb=0
     model.update()
@@ -160,7 +163,7 @@ set_objective_function(model, itins, recaps)
 model.write("PassengerMixFlow.lp")
 
 # Optimize model
-model.setParam("MIPGap", 0)  # tighten optimality only for MIP
+
 model.optimize()
 
 # If solve not optimal, compute IIS and write it out for inspection
@@ -246,7 +249,7 @@ def calculate_slackness(itins, recaps, model, columns, master):
         # C1 contribution - must match build_model_constraints logic!
         # For variable t_{p}_{r}:
         #   Term 1: +1 if flight in p
-        #   Term 2: -b_rp if flight in r (where b_rp = recapture_map.get((r_id, p_id), 0))
+
         dual_sum_c1 = 0
         for flight_id in all_flights:
             constr = model.getConstrByName(f"C1_Capacity_{_norm_id(flight_id)}")
@@ -254,15 +257,15 @@ def calculate_slackness(itins, recaps, model, columns, master):
                 pi_i = constr.Pi
                 delta_p = 1 if flight_id in flights_in_p else 0
                 delta_r = 1 if flight_id in flights_in_r else 0
-                b_rp = recapture_map.get((r_id, p_id), 0)  # REVERSED: b(r→p)
-                coeff = delta_p - delta_r * b_rp  # Match constraint!
+                b_pr = recapture_map.get((p_id,r_id), 0)  
+                coeff = delta_p - delta_r * b_pr  # Match constraint!
                 dual_sum_c1 += coeff * pi_i
 
         # C2 contribution: sigma_p
         demand_constr = model.getConstrByName(f"C2_Demand_{_norm_id(p_id)}")
         sigma_p = demand_constr.Pi if demand_constr is not None else 0
 
-        # Objective coefficient uses b_pr (not b_rp)
+        # Objective coefficient uses b_pr 
         cost_coeff = fare_p - b_pr * fare_r
         
         # Reduced cost = c_j - (a_j^T * pi)

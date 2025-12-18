@@ -56,7 +56,7 @@ for flight in flights:
     model_expensive.addConstr(constr_expr <= flight.capacity, name=f"C1_Capacity_{flight_id}")
 
 # C2: Demand Constraints
-# sum_{r in P_p} (x_p^r / b_p^r) <= D_p
+# sum_{r in P} (x_p^r / b_p^r) <= demand_p
 for p_itin in itins:
     p_id = p_itin.itinerary_id
     constr_expr = gp.LinExpr()
