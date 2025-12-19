@@ -5206,3 +5206,132 @@ Solution count 10: 1.55844e+06 1.55845e+06 1.55846e+06 ... 1.55848e+06
 
 Optimal solution found (tolerance 1.00e-04)
 Best objective 1.558436440000e+06, best bound 1.558283825889e+06, gap 0.0098%
+
+Gurobi 13.0.0 (win64) logging started Thu Dec 18 16:09:17 2025
+
+Set parameter LogFile to value "passenger_mix_flow.log"
+Gurobi Optimizer version 13.0.0 build v13.0.0rc1 (win64 - Windows 11.0 (26100.2))
+
+CPU model: 13th Gen Intel(R) Core(TM) i7-13700H, instruction set [SSE2|AVX|AVX2]
+Thread count: 14 physical cores, 20 logical processors, using up to 20 threads
+
+Optimize a model with 26 rows, 33 columns and 97 nonzeros (Min)
+Model fingerprint: 0xc4e46045
+Model has 32 linear objective coefficients
+Variable types: 0 continuous, 33 integer (0 binary)
+Coefficient statistics:
+  Matrix range     [1e-01, 1e+00]
+  Objective range  [5e+01, 2e+02]
+  Bounds range     [0e+00, 0e+00]
+  RHS range        [8e+00, 2e+02]
+Found heuristic solution: objective 78092.000000
+Presolve removed 8 rows and 4 columns
+Presolve time: 0.00s
+Presolved: 18 rows, 29 columns, 81 nonzeros
+Variable types: 0 continuous, 29 integer (0 binary)
+Found heuristic solution: objective 77968.000000
+
+Root relaxation: objective 4.500600e+04, 7 iterations, 0.00 seconds (0.00 work units)
+
+    Nodes    |    Current Node    |     Objective Bounds      |     Work
+ Expl Unexpl |  Obj  Depth IntInf | Incumbent    BestBd   Gap | It/Node Time
+
+     0     0 45006.0000    0    2 77968.0000 45006.0000  42.3%     -    0s
+H    0     0                    45082.000000 45006.0000  0.17%     -    0s
+H    0     0                    45072.000000 45006.0000  0.15%     -    0s
+H    0     0                    45062.000000 45006.0000  0.12%     -    0s
+H    0     0                    45026.000000 45006.0000  0.04%     -    0s
+H    0     0                    45016.000000 45006.0000  0.02%     -    0s
+H    0     0                    45006.000000 45006.0000  0.00%     -    0s
+
+Cutting planes:
+  Gomory: 2
+  StrongCG: 1
+
+Explored 1 nodes (7 simplex iterations) in 0.02 seconds (0.00 work units)
+Thread count was 20 (of 20 available processors)
+
+Solution count 8: 45006 45016 45026 ... 78092
+
+Optimal solution found (tolerance 1.00e-04)
+Best objective 4.500600000000e+04, best bound 4.500600000000e+04, gap 0.0000%
+
+Gurobi 13.0.0 (win64) logging started Fri Dec 19 18:24:16 2025
+
+Set parameter LogFile to value "passenger_mix_flow.log"
+Gurobi Optimizer version 13.0.0 build v13.0.0rc1 (win64 - Windows 11.0 (26100.2))
+
+CPU model: 13th Gen Intel(R) Core(TM) i7-13700H, instruction set [SSE2|AVX|AVX2]
+Thread count: 14 physical cores, 20 logical processors, using up to 20 threads
+
+IIS computation: initial model status unknown, solving to determine model status
+Found heuristic solution: objective 0.0000000
+
+Explored 0 nodes (0 simplex iterations) in 0.00 seconds (0.00 work units)
+Thread count was 1 (of 20 available processors)
+
+Solution count 1: 0 
+
+Optimal solution found (tolerance 1.00e-04)
+Best objective 0.000000000000e+00, best bound 0.000000000000e+00, gap 0.0000%
+IIS runtime: 0.01 seconds (0.00 work units)
+
+Gurobi 13.0.0 (win64) logging started Fri Dec 19 18:24:51 2025
+
+Set parameter LogFile to value "passenger_mix_flow.log"
+Gurobi Optimizer version 13.0.0 build v13.0.0rc1 (win64 - Windows 11.0 (26100.2))
+
+CPU model: 13th Gen Intel(R) Core(TM) i7-13700H, instruction set [SSE2|AVX|AVX2]
+Thread count: 14 physical cores, 20 logical processors, using up to 20 threads
+
+IIS computation: initial model status unknown, solving to determine model status
+Found heuristic solution: objective 0.0000000
+
+Explored 0 nodes (0 simplex iterations) in 0.00 seconds (0.00 work units)
+Thread count was 1 (of 20 available processors)
+
+Solution count 1: 0 
+
+Optimal solution found (tolerance 1.00e-04)
+Best objective 0.000000000000e+00, best bound 0.000000000000e+00, gap 0.0000%
+IIS runtime: 0.00 seconds (0.00 work units)
+
+Gurobi 13.0.0 (win64) logging started Fri Dec 19 18:25:14 2025
+
+Set parameter LogFile to value "passenger_mix_flow.log"
+Gurobi Optimizer version 13.0.0 build v13.0.0rc1 (win64 - Windows 11.0 (26100.2))
+
+CPU model: 13th Gen Intel(R) Core(TM) i7-13700H, instruction set [SSE2|AVX|AVX2]
+Thread count: 14 physical cores, 20 logical processors, using up to 20 threads
+
+IIS computation: initial model status unknown, solving to determine model status
+Found heuristic solution: objective 0.0000000
+
+Explored 0 nodes (0 simplex iterations) in 0.00 seconds (0.00 work units)
+Thread count was 1 (of 20 available processors)
+
+Solution count 1: 0 
+
+Optimal solution found (tolerance 1.00e-04)
+Best objective 0.000000000000e+00, best bound 0.000000000000e+00, gap 0.0000%
+IIS runtime: 0.00 seconds (0.00 work units)
+
+Gurobi 13.0.0 (win64) logging started Fri Dec 19 18:28:35 2025
+
+Set parameter LogFile to value "passenger_mix_flow.log"
+Gurobi Optimizer version 13.0.0 build v13.0.0rc1 (win64 - Windows 11.0 (26100.2))
+
+CPU model: 13th Gen Intel(R) Core(TM) i7-13700H, instruction set [SSE2|AVX|AVX2]
+Thread count: 14 physical cores, 20 logical processors, using up to 20 threads
+
+IIS computation: initial model status unknown, solving to determine model status
+Found heuristic solution: objective 0.0000000
+
+Explored 0 nodes (0 simplex iterations) in 0.00 seconds (0.00 work units)
+Thread count was 1 (of 20 available processors)
+
+Solution count 1: 0 
+
+Optimal solution found (tolerance 1.00e-04)
+Best objective 0.000000000000e+00, best bound 0.000000000000e+00, gap 0.0000%
+IIS runtime: 0.00 seconds (0.00 work units)

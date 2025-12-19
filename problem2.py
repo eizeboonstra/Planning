@@ -164,7 +164,7 @@ model.write("PassengerMixFlow.lp")
 
 # Optimize model
 
-model.optimize()
+#model.optimize()
 
 # If solve not optimal, compute IIS and write it out for inspection
 if model.status != GRB.OPTIMAL:
@@ -187,7 +187,7 @@ if model.status != GRB.OPTIMAL:
 if model.status == GRB.OPTIMAL:
     print("\n=== OPTIMAL SOLUTION FOUND ===")
     print(f"Optimal objective value = {model.objVal}")
-    lp_value = model.objVal
+    #lp_value = model.objVal
 
     print("\n--- Decision Variables ---")
     for v in model.getVars():
@@ -469,8 +469,8 @@ else:
     print(f"\nModel did not solve to optimality. Status: {model.status}")
 
 
-print(f"\nDifference between LP and column generation MIP objective values: {abs(lp_value - model.objVal)}")
-print("All columns active and integer", lp_value)
+#print(f"\nDifference between LP and column generation MIP objective values: {abs(lp_value - model.objVal)}")
+#print("All columns active and integer", lp_value)
 
 # --- Comparison with expensive_model.py ---
 total_potential_revenue = sum(itin.demand * itin.price for itin in itins)
