@@ -1,6 +1,9 @@
 import gurobipy as gp
 from gurobipy import GRB
 from sets import get_flights, get_itineraries, get_recapture, Recapture
+import time
+import matplotlib.pyplot as plt
+script_start = time.perf_counter()
 
 
 
@@ -194,6 +197,10 @@ if model.status == GRB.OPTIMAL:
         if abs(v.X) > 1e-6:  # print only nonzero variables
             print(f"{v.VarName} = {v.X}")
 
+
+
+
+
 else:
     print("\nModel did not solve to optimality.")
     print(f"Gurobi Status Code: {model.status}")
@@ -279,6 +286,7 @@ def calculate_slackness(itins, recaps, model, columns, master):
 
     # remove columns with negative slackness and add them to master
     columns_to_remove = []
+    columns_added_count = 0
     for key, value in slackness.items():
         if value < 0:
             p_id, r_id = key
@@ -286,6 +294,7 @@ def calculate_slackness(itins, recaps, model, columns, master):
             if col_to_move:
                 columns_to_remove.append(col_to_move)
                 master.append(col_to_move)
+                columns_added_count += 1
                 # Add the variable to the model for the new column
                 var_name = f"t_{p_id}_{r_id}"
                 if model.getVarByName(var_name) is None:
@@ -297,7 +306,7 @@ def calculate_slackness(itins, recaps, model, columns, master):
     
     model.update()
 
-    return min_slackness, master, columns
+    return min_slackness, master, columns, columns_added_count
 
 def calculate_slackness_reformulation(itins, recaps, model, columns, master):
     slackness = {}
@@ -364,6 +373,9 @@ def calculate_slackness_reformulation(itins, recaps, model, columns, master):
 
 iteration = 0
 objective_history = []  # Track objective values per iteration
+lp_iteration_times = []  # Track solve time per LP iteration
+lp_total_time = 0.0
+columns_added_per_iteration = []  # Track columns added per iteration
 
 while True:
     # Remove old constraints before rebuilding
@@ -373,7 +385,11 @@ while True:
     
     build_model_constraints(model, flights, itins, master)
     set_objective_function(model, itins, master)
+    iter_start = time.perf_counter()
     model.optimize()
+    iter_time = time.perf_counter() - iter_start
+    lp_iteration_times.append(iter_time)
+    lp_total_time += iter_time
 
     
     # Store objective value for this iteration
@@ -383,9 +399,10 @@ while True:
     if not columns:  # No more columns to check
         break
         
-    min_slackness, master, columns= calculate_slackness(itins, recaps, model, columns, master)
+    min_slackness, master, columns, cols_added = calculate_slackness(itins, recaps, model, columns, master)
+    columns_added_per_iteration.append(cols_added)
     iteration += 1
-    print(f"Iteration {iteration}: Minimum Slackness = {min_slackness}")
+    print(f"Iteration {iteration}: Minimum Slackness = {min_slackness}, Columns Added = {cols_added}")
     
     # if added_vars:
     #     print("  Added DVs:", ", ".join(added_vars))
@@ -399,6 +416,21 @@ while True:
 model.write("ColumnGeneration_LP.lp")
 print(f"\nLP file written to: ColumnGeneration_LP.lp")
 
+# Print first 5 nonzero duals for capacity constraints (last LP relaxation)
+if model.status == GRB.OPTIMAL:
+    print("\nFirst 5 nonzero duals for capacity constraints (last LP relaxation):")
+    count = 0
+    for flight in flights:
+        constr = model.getConstrByName(f"C1_Capacity_{_norm_id(flight.flight_id)}")
+        if constr is not None and abs(constr.Pi) > 1e-6:
+            print(f"Flight {flight.flight_id}: Dual value (Pi) = {constr.Pi:.4f}")
+            count += 1
+            if count == 5:
+                break
+
+
+
+
 # Optimize using integer variables and additional columns
 for r in master:
     p_id = r.from_itinerary
@@ -407,7 +439,9 @@ for r in master:
     var = model.getVarByName(var_name)
     var.vtype = GRB.INTEGER
 model.update()
+mip_start = time.perf_counter()
 model.optimize()
+mip_time = time.perf_counter() - mip_start
 
 # Write the MIP file after integer conversion
 model.write("ColumnGeneration_MIP.lp")
@@ -427,6 +461,12 @@ print(f"Total number of iterations: {iteration}")
 print("\n--- Objective Value per Iteration ---")
 for i, obj_val in enumerate(objective_history):
     print(f"  Iteration {i}: {obj_val:.2f}")
+
+print("\n--- Computational Time ---")
+print(f"Total LP solve time (column generation): {lp_total_time:.3f} seconds")
+print(f"Final MIP solve time: {mip_time:.3f} seconds")
+print(f"Total computational time: {lp_total_time + mip_time:.3f} seconds")
+print(f"End-to-end script runtime: {time.perf_counter() - script_start:.3f} seconds")
 
 # Calculate and print passengers recaptured and non-zero variables
 if model.status == GRB.OPTIMAL:
@@ -464,6 +504,8 @@ if model.status == GRB.OPTIMAL:
         print("\n--- Non-zero Variables (real recapture) ---")
         for var_name, var_val in nonzero_vars_list:
             print(f"  {var_name} = {var_val:.0f}")
+
+
     
 else:
     print(f"\nModel did not solve to optimality. Status: {model.status}")
@@ -480,6 +522,84 @@ print(f"Lost Revenue (this model): ${model.objVal:,.2f}")
 print(f"Implied Actual Revenue: ${total_potential_revenue - model.objVal:,.2f}")
 print(f"\nTo verify: expensive_model.py objective should equal: ${total_potential_revenue - model.objVal:,.2f}")
 
+# # =============================================================
+# # PLOTTING: Objective Trajectory & Columns Added per Iteration
+# # =============================================================
 
+# fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+
+# # Plot 1: Objective Trajectory
+# ax1 = axes[0]
+# ax1.plot(range(len(objective_history)), objective_history, marker='o', linewidth=2, markersize=6, color='blue')
+# ax1.set_xlabel('Iteration', fontsize=12)
+# ax1.set_ylabel('Objective Value (Lost Revenue)', fontsize=12)
+# ax1.set_title('Column Generation: Objective Trajectory', fontsize=14)
+# ax1.grid(True, alpha=0.3)
+# ax1.ticklabel_format(style='plain', axis='y')
+
+# # Plot 2: Columns Added per Iteration
+# ax2 = axes[1]
+# ax2.bar(range(1, len(columns_added_per_iteration) + 1), columns_added_per_iteration, color='green', alpha=0.7)
+# ax2.set_xlabel('Iteration', fontsize=12)
+# ax2.set_ylabel('Columns Added', fontsize=12)
+# ax2.set_title('Columns Added per Iteration', fontsize=14)
+# ax2.grid(True, alpha=0.3, axis='y')
+
+# plt.tight_layout()
+# plt.show()
+
+# =============================================================
+# KPI: REVENUE OPPORTUNITY - Where to Invest for More Revenue
+# =============================================================
+
+if model.status == GRB.OPTIMAL:
+    print("\n" + "="*70)
+    print("REVENUE OPPORTUNITY: Where to Invest for More Revenue")
+    print("="*70)
+    print("\nOD pairs ranked by lost revenue (spilled passengers × average fare)")
+    print("Adding capacity on these routes would recapture this revenue.\n")
+    
+    # Calculate lost revenue per OD pair
+    od_opportunity = {}
+    
+    for itin in itins:
+        if itin.itinerary_id == 382:
+            continue
+        
+        od = (itin.origin, itin.destination)
+        if od not in od_opportunity:
+            od_opportunity[od] = {'spilled_pax': 0, 'lost_revenue': 0, 'avg_fare': 0, 'total_fare': 0, 'count': 0}
+        
+        # Get spilled passengers for this itinerary
+        spilled_var = model.getVarByName(f"t_{itin.itinerary_id}_382")
+        spilled = spilled_var.X if spilled_var and abs(spilled_var.X) > 1e-6 else 0
+        
+        if spilled > 0:
+            od_opportunity[od]['spilled_pax'] += spilled
+            od_opportunity[od]['lost_revenue'] += spilled * itin.price
+            od_opportunity[od]['total_fare'] += itin.price
+            od_opportunity[od]['count'] += 1
+    
+    # Calculate average fare for ODs with spill
+    for od in od_opportunity:
+        if od_opportunity[od]['count'] > 0:
+            od_opportunity[od]['avg_fare'] = od_opportunity[od]['total_fare'] / od_opportunity[od]['count']
+    
+    # Filter to only ODs with lost revenue and sort
+    opportunities = [(od, data) for od, data in od_opportunity.items() if data['lost_revenue'] > 0]
+    opportunities_sorted = sorted(opportunities, key=lambda x: x[1]['lost_revenue'], reverse=True)
+    
+    print(f"{'Rank':<5} {'Origin':<8} {'Dest':<8} {'Spilled':>10} {'Avg Fare':>12} {'Lost Revenue':>14}")
+    print("-" * 60)
+    
+    for rank, (od, data) in enumerate(opportunities_sorted[:15], 1):
+        print(f"{rank:<5} {od[0]:<8} {od[1]:<8} {data['spilled_pax']:>10.0f} ${data['avg_fare']:>10.2f} ${data['lost_revenue']:>12,.0f}")
+    
+    total_lost = sum(data['lost_revenue'] for _, data in opportunities_sorted)
+    total_spilled = sum(data['spilled_pax'] for _, data in opportunities_sorted)
+    
+    print("-" * 60)
+    print(f"{'TOTAL':<22} {total_spilled:>10.0f} {' ':>12} ${total_lost:>12,.0f}")
+    print(f"\nInvesting in the top 5 routes could recover: ${sum(data['lost_revenue'] for _, data in opportunities_sorted[:5]):,.0f}")
 
 

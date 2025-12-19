@@ -2,9 +2,11 @@ from sets import get_flights, get_itineraries, get_recapture
 import gurobipy as gp
 from gurobipy import GRB
 import csv
+import time
 
 """Schema is now controlled centrally in sets.py via USE_LECTURE_SCHEMA."""
 
+script_start = time.perf_counter()
 flights = get_flights()
 
 # Filter out dummy itinerary (id 382)
@@ -106,10 +108,12 @@ model_expensive.setObjective(obj_expr, GRB.MAXIMIZE)
 
 model_expensive.write("passenger_mix_flow_expensive.lp")
 model_expensive.optimize()
+total_runtime = time.perf_counter() - script_start
 
 # Print actual constraint count for verification
 print(f"\nActual constraints in model: {model_expensive.NumConstrs}")
 print("Solver log written to: log_file")
+print(f"Total runtime: {total_runtime:.3f} seconds")
 
 # --- Results Summary ---
 if model_expensive.status == GRB.OPTIMAL:
@@ -117,6 +121,7 @@ if model_expensive.status == GRB.OPTIMAL:
     print("--- Optimization Successful! ---")
     print("--------------------------------")
     print(f"\nOptimal Total Revenue: ${model_expensive.objVal:,.2f}")
+    print(f"Total runtime: {total_runtime:.3f} seconds")
     
     print("\n--- Passenger Assignments (x_p_r > 0) ---")
     for v in model_expensive.getVars():
@@ -124,13 +129,18 @@ if model_expensive.status == GRB.OPTIMAL:
             print(f"  {v.varName}: {v.x}")
     print("\nLP model file created: passenger_mix_flow_expensive.lp")
 
+
+
+
 elif model_expensive.status == GRB.INFEASIBLE:
     print("\nModel is infeasible.")
     model_expensive.computeIIS()
     model_expensive.write("passenger_mix_infeasible.ilp")
     print("IIS written to passenger_mix_infeasible.ilp")
+    print(f"Total runtime: {total_runtime:.3f} seconds")
 else:
     print(f"\nOptimization finished with status: {model_expensive.status}")
+    print(f"Total runtime: {total_runtime:.3f} seconds")
 
 
 
@@ -141,3 +151,4 @@ print(f"Total Potential Revenue (all demand satisfied): ${total_potential_revenu
 print(f"Actual Revenue (expensive model): ${model_expensive.objVal:,.2f}")
 print(f"Lost Revenue (expensive model): ${total_potential_revenue - model_expensive.objVal:,.2f}")
 print(f"\nTo verify: problem2.py objective should equal: ${total_potential_revenue - model_expensive.objVal:,.2f}")
+
