@@ -189,6 +189,10 @@ def get_recapture(schema: str | None = None):
         recaptures.append(recapture)
 
     for itin in get_itineraries(schema):
+        recapture = Recapture(itin.itinerary_id, itin.itinerary_id, 1.0)
+        recaptures.append(recapture)
         recapture = Recapture(itin.itinerary_id, 382, 1.0)
+        recaptures.append(recapture)
+        recapture = Recapture(382, itin.itinerary_id, 0.0)
         recaptures.append(recapture)
     return recaptures

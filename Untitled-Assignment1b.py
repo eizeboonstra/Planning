@@ -79,10 +79,14 @@ def read_file(file_name,sheet_name):
 
 def read_arcs_from_file(file, sheet_dist, sheet_dem):
     """
-    Create List_Arcs = [(id, origin, dest, distance, demand), ...]
-    using:
-      - distance table
-      - demand table
+    Crea List_Arcs = [(id, origin, dest, distance, demand), ...]
+    usando:
+      - tabella distanze
+      - tabella domande
+    Crea List_Arcs = [(id, origin, dest, distance, demand), ...]
+    usando:
+      - tabella distanze
+      - tabella domande
     """
     dist_dict = read_matrix(file, sheet_dist)
     dem_dict  = read_matrix(file,  sheet_dem)
@@ -91,7 +95,7 @@ def read_arcs_from_file(file, sheet_dist, sheet_dem):
     arc_id = 1
 
     for (origin, dest), d_km in dist_dict.items():
-        dem = dem_dict.get((origin, dest), 0)  # 0 if missing
+        dem = dem_dict.get((origin, dest), 0)  # 0 se manca
         List_Arcs.append((arc_id, origin, dest, d_km, dem))
         arc_id += 1
 
@@ -130,7 +134,8 @@ def construct_graph():
         airport.append(ap)
         airport_map[id] = ap
     
-    #generate the distance
+    #generare la distanza
+    #generare la distanza
     for i,a in enumerate(List_Arcs):
         a = a + (calculate_distance(a, airport),)
         List_Arcs[i] = a
@@ -183,14 +188,16 @@ def check_model_status(model):
 
 
 
-##########GUROBI MODEL
+##########MODELLO GURIBI
+##########MODELLO GURIBI
 def Model_2 (arc,airport,aircraft):
     "Solve the MCF Problem with a Arc-based formulation using linear programming."
     LF = 0.75
     hub_airport = "EHAM"
     BT = 10
     #CASK = C_x + C_T + C_F with C_T = c_T*dij/Vk
-    Budget = 100000000000000
+    Budget = 10000000000000000000
+    Budget = 10000000000000000000
 
     g = {}
     for ap in airport:
@@ -221,7 +228,7 @@ def Model_2 (arc,airport,aircraft):
         )
     model.update()
 
-    # demand constraints
+    # cdemand constraints
     Demand_cr = {}
     for a in arc:
         Demand_cr[a.From,a.To] = model.addConstr((x.get(a,0)+w[a])<= a.Dem,
@@ -251,7 +258,8 @@ def Model_2 (arc,airport,aircraft):
     #time constraints
     Time = {}
     for ac in aircraft:
-        Time[ac.id] = model.addConstr(quicksum(((1.5 if a.To == hub_airport else 1.0)*ac.TAT/60+a.Dist/ac.V)*z.get((a,ac),0) for a in arc)<=BT*7*n_ac[ac], name =f"time{ac.id}")
+        Time = model.addConstr(quicksum(((1.5 if a.To == hub_airport else 1.0)*ac.TAT/60+a.Dist/ac.V)*z.get((a,ac),0) for a in arc)<=BT*7*n_ac[ac], name =f"time{ac.id}")
+        Time = model.addConstr(quicksum(((1.5 if a.To == hub_airport else 1.0)*ac.TAT/60+a.Dist/ac.V)*z.get((a,ac),0) for a in arc)<=BT*7*n_ac[ac], name =f"time{ac.id}")
         
     #range constraint
     Range = {}
@@ -301,7 +309,8 @@ def Model_2 (arc,airport,aircraft):
     #update gurobi with the constraints
     model.update()
     # Useful for model debugging
-    model.write("Assignment1b.lp")
+    model.write("Model_1.lp")
+    model.write("Model_1.lp")
     model.optimize()
     
     check_model_status(model)
@@ -311,33 +320,33 @@ def Model_2 (arc,airport,aircraft):
 
 def print_model_result(x, w, z, n_ac, model, arc, aircraft, BT, hub_airport):
     """
-    Prints:
-    - for each used arc: total pax and flights per aircraft type
-    - value of the objective function
-    - number of aircraft per type
-    - fleet utilization per type
+    Stampa:
+    - per ogni arco usato: pax totali e voli per tipo di aeromobile
+    - valore dell'OF
+    - numero di aeromobili per tipo
+    - utilizzazione della flotta per tipo
     """
 
     if model.SolCount == 0:
-        print("No solution found.")
+        print("Nessuna soluzione trovata.")
         return
 
-    print("Optimal solution (pax; flights per aircraft type):\n")
+    print("Soluzione ottima (pax; voli per tipo di aeromobile):\n")
 
-    # header to remember the order of aircraft types
+    # intestazione per ricordare l'ordine dei tipi di aereo
     ac_ids = [ac.id for ac in aircraft]
-    print("Aircraft type order:", ", ".join(ac_ids), "\n")
+    print("Ordine tipi AC:", ", ".join(ac_ids), "\n")
 
-    # --- Leg flows + flights per type ---
+    # --- Flussi di leg + voli per tipo ---
     for a in arc:
-        # x[a] exists only if the arc touches the hub
+        # x[a] esiste solo se l’arco tocca l’hub
         x_var = x.get(a, None)
         x_val = x_var.X if x_var is not None else 0.0
 
         w_val = w[a].X
         pax_tot = x_val + w_val
 
-        # flights per type
+        # voli per tipo
         flights = []
         for ac in aircraft:
             z_var = z.get((a, ac), None)
@@ -346,7 +355,7 @@ def print_model_result(x, w, z, n_ac, model, arc, aircraft, BT, hub_airport):
             else:
                 flights.append(0)
 
-        # if there are no pax and no flights, skip
+        # se non ci sono pax e non ci sono voli, salto
         if pax_tot <= 1e-6 and all(f == 0 for f in flights):
             continue
 
@@ -357,13 +366,13 @@ def print_model_result(x, w, z, n_ac, model, arc, aircraft, BT, hub_airport):
     print(f"\nOF = {model.ObjVal:.2f} €/week\n")
 
     # --- Fleet size ---
-    print("Number of aircraft per type:")
+    print("Numero di aeromobili per tipo:")
     for ac in aircraft:
         n_val = n_ac[ac].X
         print(f"  {ac.id}: {n_val:.2f}")
 
-    # --- Fleet utilization (estimates consistent with time constraint) ---
-    print("\nAC Utilisation (estimates):")
+    # --- Utilizzazione flotta (stime coerenti col vincolo di tempo) ---
+    print("\nAC Utilisation (stime):")
     for ac in aircraft:
         used_hours = 0.0
         for a in arc:
@@ -371,13 +380,13 @@ def print_model_result(x, w, z, n_ac, model, arc, aircraft, BT, hub_airport):
             if z_var is None or z_var.X <= 1e-6:
                 continue
 
-            # same time used in the time constraint
+            # stesso tempo usato nel vincolo di tempo
             turn_time = (1.5 if a.To == hub_airport else 1.0) * ac.TAT / 60.0
             flight_time = a.Dist / ac.V
             used_hours += (turn_time + flight_time) * z_var.X
 
         n_val = n_ac[ac].X
-        available_hours = BT * 7 * n_val  # 10 h/day * 7 * n_ac
+        available_hours = BT * 7 * n_val  # 10 h/giorno * 7 * n_ac
 
         if available_hours > 1e-6:
             util = 100.0 * used_hours / available_hours
@@ -387,7 +396,7 @@ def print_model_result(x, w, z, n_ac, model, arc, aircraft, BT, hub_airport):
         print(f"  {ac.id}: {util:.2f}%")
 
 
-###### RUN THE CODE
+###### RUNNARE IL CODICE
 
 arc, airport, aircraft = construct_graph()
 
@@ -395,3 +404,4 @@ arc, airport, aircraft = construct_graph()
 start_time = time()
 Model_2(arc, airport,aircraft)    
 print ('Run Time =', time() - start_time)
+

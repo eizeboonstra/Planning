@@ -8,13 +8,10 @@ DemandLn = np.log(Demand)
 np.fill_diagonal(DemandLn.values, 0)
 
 pop = pd.read_csv('pop.csv') # "City", "2021", "2024"
-print(pop['2021'][0])
 
 GDP = pd.read_csv('GDP.csv') # "City", "2021", "2024"
-print(GDP['2021'][0])
 
 Cords = pd.read_csv('Coordinates.csv') # "City", "Latitude (deg)", "Longitude (deg)"
-print(Cords['Latitude (deg)'][0])
 
 def distance(lat1, lon1, lat2, lon2):
     R_E = 6371*1000  # Earth radius in meters
@@ -146,17 +143,17 @@ for i in range(20):
 
 
 # # Scatter plot
-# plt.figure(figsize=(6,6))
-# plt.scatter(actual, pred, s=10)
-# plt.xlabel("Actual Demand")
-# plt.ylabel("Estimated Demand")
-# plt.title("Gravity Model: Actual vs Estimated Demand")
+plt.figure(figsize=(6,6))
+plt.scatter(actual, pred, s=10)
+plt.xlabel("Actual Demand")
+plt.ylabel("Estimated Demand")
+plt.title("Gravity Model: Actual vs Estimated Demand")
 
-# # 45-degree reference line
-# lims = [0, max(actual.max(), pred.max())]
-# plt.plot(lims, lims)
+# 45-degree reference line
+lims = [0, max(actual.max(), pred.max())]
+plt.plot(lims, lims)
 
-# plt.show()
+plt.show()
 
 
 pop_array = pop['2024'].values + 2 * ( pop['2024'].values - pop['2021'].values ) / 3
@@ -170,7 +167,8 @@ GDP_updated = pd.DataFrame({
     'City': GDP['City'],
     '2026': GDP_array
 })
-
+for i in range(20):
+    print(f"{pop['City'][i]} {pop_updated['2026'][i]:.0f} {GDP_updated['2026'][i]:.0f}")
 
 Demand_2026_df = pd.DataFrame(np.zeros((20, 20)),
                               index=pop_updated['City'],
@@ -201,3 +199,5 @@ for i in range(20):
         )
 
 print(Demand_2026_df)
+
+Demand_2026_df.to_csv('DemandMatrix_2026.csv', index=True)
